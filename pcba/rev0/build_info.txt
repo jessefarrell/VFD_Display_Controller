@@ -1,0 +1,14 @@
+__General Notes__
+dd/mm/yy - 
+
+__Details__
+PCB FAB	--------> 
+Layers --------->
+Stackup Used --->
+
+__Build Table__
+|Build Date	| BOM Used	| Comments	  				|
+|---------------|---------------|-----------------------------------------------|
+|dd/mm/yy	| xxx.csv	| build notes...				|
+|dd/mm/yy	| xxx.csv	| build notes...				|
+|---------------|---------------|-----------------------------------------------|

@@ -1,0 +1,30 @@
+\pcba
+
+Overview:
+Because of how kicad templates work, the actual project has to be stored at the root of this project directory.
+This folder should __ONLY__ contain released PCBA packages.
+For the PCB currently being developed see root.
+
+template_project
+├── pcba
+│   ├── REV0		(folder)
+│   │  ├── build_info.txt
+│   │  ├── bom.csv
+│   │  ├── cpl.csv
+│   │  ├── template_project_rev0.zip
+│   │  └── schematic_rev0.pdf
+│   └── REV1		(folder)
+│      ├── build_info.txt
+│      ├── box.csv
+│      ├── cpl.csv
+│      ├── template_project_rev1.zip
+│      └── schematic_rev1.pdf
+
+
+Details...
+build_info.txt 	- Example info. Stackup used, where built, any other useful notes about the fab.
+bom.csv 	- Bill of materials. If this board was rebuilt using different parts, create a new bom and add paper trail to build_info.txt.
+cpl.csv		- Component pick and place. If hand assembled mention in build_info.txt.
+project.zip	- Zip folder containing kicad_pro, kicad_sch, and kicad_pcb files.
+schematic.pdf	- Schematic for the PCBA built.
+Errata.xlsx	- Errata items for each revision of the project. 

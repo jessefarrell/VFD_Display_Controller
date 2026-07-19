@@ -1,0 +1,20 @@
+# For PCBs designed using KiCad: https://www.kicad.org/
+# Format documentation: https://kicad.org/help/file-formats/
+
+# Copied from nguyen-v github template
+*-backups
+\#auto_saved_files#
+*.xml
+*.lib
+*.lck
+*.bak
+*.kicad_sch-bak
+fp-info-cache
+
+# Other... Taken from my old gitignore
+*.bck
+_autosave-*
+
+# Simulation Files
+/design_documents/spice_simulation/*.log
+/design_documents/spice_simulation/*.raw

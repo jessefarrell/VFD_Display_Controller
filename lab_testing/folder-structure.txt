@@ -1,0 +1,19 @@
+\lab_testing
+
+Overview:
+All lab test results should go into this folder, including early proto testing.
+There is no structure requirements for these notes. Examples provided below.
+
+template_project
+├── lab_testing
+│   ├── prototype	(folder)
+│   │   └── efficiency.xlsx
+│   ├── rev0		(folder)
+│   │   ├── sparkup.xlsx
+│   │   └── some_issue.xlsx
+│   ├── rev1		(folder)
+│   │   ├── sparkup.xlsx
+│   │   └── some_issue.xlsx
+│   ├── rev2		(folder)
+│   │   ├── sparkup.xlsx
+│   │   └── some_other_issue.xlsx

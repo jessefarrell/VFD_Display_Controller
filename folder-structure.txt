@@ -1,0 +1,74 @@
+TODO
+> Annular ring rule is borked... not good for JLC normal via
+> Include JLCJLCJLC footprint by default
+> Include Shamrock Circuits logo
+> Include SN# footprint
+
+REMINDER
+> We are standardizing library locations
+--- Store custom KiCad library at C:\\0_GITHUB
+--- Standard paths, help us work across different computers :)
+
+*** FILE STRUCTURE EXAMPLE ***
+
+Project
+├── 3dmodels
+│   ├── rev0			(folder)
+│   │   ├── pcba_model1.zip
+│   │   └── pcba_model2.zip
+│   ├── rev1			(folder)
+│   │   ├── pcba_model1.zip
+│   │   └── pcba_model2.zip
+│   ├── rev2			(folder)
+│   │   └── same_as_rev1.txt
+│   ├── pcba_model1.step
+│   └── pcba_model2.step
+├── Design_Docs
+│   ├── datasheets 		(folder)
+│   ├── spice_simulation	(folder)
+│   ├── calculations.xlsx
+│   ├── checklist.xlsx
+│   ├── errata.xlsx
+│   └── HAS.docx
+├── firmware
+│   ├── rev0			(folder)
+│   │   ├── code.zip
+│   │   └── rev0.bin
+│   ├── rev1			(folder)
+│   │   ├── code.zip
+│   │   └── rev1.bin
+│   ├── rev2			(folder)
+│   │   └── see_rev1
+│   ├── foo.py
+│   ├── bar.hpp
+│   └── bar.cpp
+├── images			(folder)
+├── lab_testing
+│   ├── prototype		(folder)
+│   │   └── efficiency.xlsx
+│   ├── rev1			(folder)
+│   │   ├── sparkup.xlsx
+│   │   └── some_issue.xlsx
+│   └── rev2			(folder)
+│       ├── sparkup.xlsx
+│       └── some_other_issue.xlsx
+├── pcba
+│   ├── REV0			(folder)
+│   │  ├── rev0.zip
+│   │  └── schematic.pdf
+│   └── REV1			(folder)
+│      ├── rev0.zip
+│      └── schematic.pdf
+├── project.kicad_pcb 
+├── project.kicad_prl 
+├── project.kicad_pro 
+├── project.kicad_sch 
+└── readme.txt
+
+*** README ***
+Hi :)
+
+Q: When should I rev the project in Kicad?
+A: After you order the PCBA lock the project. 
+We shouldn't modify the files of a board we already built.
+It's up to you when to designate a full stepping x.0, versus minor update 1.x.
