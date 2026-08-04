@@ -1,14 +1,14 @@
 __General Notes__
-dd/mm/yy - 
+04/08/2026 - Ordered 10x PCBA. 1oz copper, lead free HASL, 1.6mm, ect.
 
 __Details__
-PCB FAB	--------> 
-Layers --------->
-Stackup Used --->
+PCB FAB	--------> JLCPCB
+Layers ---------> 2L
+Stackup Used ---> Default
 
 __Build Table__
 |Build Date	| BOM Used	| Comments	  				|
 |---------------|---------------|-----------------------------------------------|
-|dd/mm/yy	| xxx.csv	| build notes...				|
+|04/08/2026	| n/a		| Hand assembling these boards.			|
 |dd/mm/yy	| xxx.csv	| build notes...				|
 |---------------|---------------|-----------------------------------------------|

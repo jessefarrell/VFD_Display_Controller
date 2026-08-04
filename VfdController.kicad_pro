@@ -39,9 +39,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.8,
-          "height": 1.27,
-          "width": 1.27
+          "drill": 1.0,
+          "height": 4.2,
+          "width": 2.0
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -69,7 +69,13 @@
           "thermal_relief_spoke_width": 0.5
         }
       },
-      "diff_pair_dimensions": [],
+      "diff_pair_dimensions": [
+        {
+          "gap": 0.0,
+          "via_gap": 0.0,
+          "width": 0.0
+        }
+      ],
       "drc_exclusions": [],
       "meta": {
         "version": 2
@@ -203,7 +209,13 @@
           "td_width_to_size_filter_ratio": 0.9
         }
       ],
-      "track_widths": [],
+      "track_widths": [
+        0.0,
+        0.2,
+        0.3,
+        0.4,
+        0.5
+      ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
           "corner_radius_percentage": 80,
@@ -230,7 +242,16 @@
           "spacing": 0.6
         }
       },
-      "via_dimensions": [],
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        },
+        {
+          "diameter": 0.45,
+          "drill": 0.3
+        }
+      ],
       "zones_allow_external_fillets": false
     },
     "ipc2581": {
@@ -524,11 +545,11 @@
     "last_paths": {
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "pcba/rev0/gerbers/",
       "specctra_dsn": "",
       "vrml": ""
     },
-    "page_layout_descr_file": ""
+    "page_layout_descr_file": "kicad-embed://pcb_title.kicad_wks"
   },
   "schematic": {
     "annotate_start_num": 0,
@@ -536,7 +557,7 @@
       "method": 0,
       "sort_order": 0
     },
-    "bom_export_filename": "${PROJECTNAME}.csv",
+    "bom_export_filename": "pcba\\rev0\\VfdController_bom_00.csv",
     "bom_fmt_presets": [],
     "bom_fmt_settings": {
       "field_delimiter": ",",
@@ -551,6 +572,12 @@
     "bom_settings": {
       "exclude_dnp": false,
       "fields_ordered": [
+        {
+          "group_by": true,
+          "label": "IPN",
+          "name": "IPN",
+          "show": true
+        },
         {
           "group_by": false,
           "label": "Reference",
@@ -570,10 +597,10 @@
           "show": true
         },
         {
-          "group_by": true,
+          "group_by": false,
           "label": "DNP",
           "name": "${DNP}",
-          "show": true
+          "show": false
         },
         {
           "group_by": true,
@@ -582,30 +609,114 @@
           "show": true
         },
         {
-          "group_by": true,
+          "group_by": false,
           "label": "Exclude from Board",
           "name": "${EXCLUDE_FROM_BOARD}",
-          "show": true
+          "show": false
         },
         {
-          "group_by": true,
+          "group_by": false,
           "label": "Footprint",
           "name": "Footprint",
           "show": true
         },
         {
           "group_by": false,
+          "label": "Package",
+          "name": "Package",
+          "show": true
+        },
+        {
+          "group_by": false,
           "label": "Datasheet",
           "name": "Datasheet",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "MFN_1",
+          "name": "MFN_1",
           "show": true
+        },
+        {
+          "group_by": false,
+          "label": "MPN_1",
+          "name": "MPN_1",
+          "show": true
+        },
+        {
+          "group_by": false,
+          "label": "LCSC_1",
+          "name": "LCSC_1",
+          "show": true
+        },
+        {
+          "group_by": false,
+          "label": "LCSC_2",
+          "name": "LCSC_2",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "LCSC_3",
+          "name": "LCSC_3",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "MFN_2",
+          "name": "MFN_2",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "MFN_3",
+          "name": "MFN_3",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "MPN_2",
+          "name": "MPN_2",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "MPN_3",
+          "name": "MPN_3",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Voltage Rating",
+          "name": "Voltage Rating",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Comment",
+          "name": "Comment",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Description",
+          "name": "Description",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "#",
+          "name": "${ITEM_NUMBER}",
+          "show": false
         }
       ],
       "filter_string": "",
       "group_symbols": true,
       "include_excluded_from_bom": true,
-      "name": "Default Editing",
+      "name": "",
       "sort_asc": true,
-      "sort_field": "Reference"
+      "sort_field": "${EXCLUDE_FROM_BOARD}"
     },
     "bus_aliases": {},
     "connection_grid_size": 50.0,
@@ -648,7 +759,7 @@
         "uuid": "6a91e040-5342-44ef-8aed-d6aaae0f5130"
       }
     ],
-    "used_designators": "D1,C1-6,A1,R1-28,#PWR1-59,J1-3,U1-4,Q1-28",
+    "used_designators": "G1-3,R3",
     "variants": []
   },
   "sheets": [
@@ -657,7 +768,12 @@
       "VfdController"
     ]
   ],
-  "text_variables": {},
+  "text_variables": {
+    "_COMPANY_": "Shamrock Circuits",
+    "_DESIGNER_": "Jesse Farrell",
+    "_PROJECT_": "VFD Controller",
+    "_REVISION_": "00"
+  },
   "tuning_profiles": {
     "meta": {
       "version": 0
