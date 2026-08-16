@@ -27,7 +27,7 @@
 <!-- High level overview of what the project is and does -->
 This VFD module controller was designed around a VFD module that was originally integrated into the <a href="https://ckm-content.se.com/ckmContent/sfc/servlet.shepherd/document/download/0691H00000GYmavQAD">ACM 3710</a>. Exact model numbers of the module seem to vary, but as far as I can tell they are all interchangeable. This module is the **ISE Electronics Corp, FU209SCPB-S4A** or **FU209SCPB-T60A**, and they seem to be a custom (undocumented) model that is similar to  **CU209SCPB-T20A**. The purpose of this project is to convert the VFD modules parallel bus interface into something configurable over USB, and to possible develop a few applications for the display.
 <p align="center">
-  <img src="images/vfd_module/VfdModule_cropped.png" width="65%" alt="PCB top layout" />
+  <img src="images/vfd_module/VfdModule_Cropped.png" width="65%" alt="PCB top layout" />
   <img src="images/misc/ACM_3710_Drawing.png" width="65%" alt="ACM 3710">
 </p>
 
