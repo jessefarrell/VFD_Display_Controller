@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
+#include "test_display.h"
+#include "app_common.h"
 #include "pico/stdlib.h"
 #include "pico/stdio.h"
 #include "config.h"
 #include "vfd.h"
 #include <stdio.h>
-
-// Single global instance for this interactive test harness.
-Vfd vfd(SETUP_HOLD_TIME_US);
 
 /**
  * @brief Blocking read of one character from stdin, echoed back to console.
@@ -38,19 +37,15 @@ static void print_menu(void) {
     printf("  Ctrl+B (0x02) toggle cursor_blink()\n");
     printf("  Ctrl+L (0x0C) clear_screen()\n");
     printf("  Ctrl+R (0x12) reset()\n");
-    printf("  Ctrl+[ (0x1B) display_scroll(LEFT, wrap=true)\n");
+    printf("  Ctrl+\\ (0x1C) display_scroll(LEFT, wrap=true)\n");
     printf("  Ctrl+] (0x1D) display_scroll(RIGHT, wrap=true)\n");
     printf("  Ctrl+H (0x08) same as Backspace (cursor left)\n");
     printf("  Ctrl+A (0x01) print this menu again\n");
+    printf("  Esc / Ctrl+C  exit to menu\n");
     printf("-------------------------------\n\n");
 }
 
-int main() {
-    stdio_init_all();
-    sleep_ms(2000);  // give USB serial time to enumerate before first prints
-
-    vfd.init();
-
+void run_display_test_app(Vfd& vfd) {
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
@@ -71,6 +66,11 @@ int main() {
         printf("\n");
 
         switch (c) {
+            case KEY_ESC:     // also Ctrl+[ -- reserved for exit, see below
+            case KEY_CTRL_C:
+                printf("-> Exiting Display Test Harness, returning to menu\n");
+                return;
+
             case 0x7F:  // Delete
                 printf("-> delete_character(1)\n");
                 vfd.delete_character(1);
@@ -108,7 +108,7 @@ int main() {
                 vfd.reset();
                 break;
 
-            case 0x1B:  // Ctrl+[
+            case 0x1C:  // Ctrl+\ (moved off Ctrl+[/Esc, which now exits)
                 printf("-> display_scroll(LEFT, wrap=true)\n");
                 vfd.display_scroll(Direction::LEFT, true);
                 break;

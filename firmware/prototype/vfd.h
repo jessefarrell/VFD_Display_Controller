@@ -26,11 +26,17 @@ enum class VfdCode : uint8_t{
 enum class Direction { RIGHT = 1, LEFT = 0 };
 
 class Vfd{
-private:
+public:
+    // Capacity of the display, in characters. Public so other modules
+    // (e.g. Clock) can size their own formatting buffers to match.
     static constexpr uint8_t MAX_DIGITS = 20;
+
+private:
     uint8_t setup_hold_time_us;
     uint8_t cursor_position;                // 0 = Furthest left (home), MAX_DIGITS = furthest right
-    char displayed_string[MAX_DIGITS];
+    // +1 for a null terminator -- displayed_string is treated as a C-string
+    // throughout this class (write_string's loop, every %s printf).
+    char displayed_string[MAX_DIGITS + 1];
 
     /**
      * @brief Writes 8 bit code to D0-D7

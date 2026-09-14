@@ -121,4 +121,15 @@ class Clock {
 
 };
 
+/**
+ * @brief Runs the clock application: initializes a Clock bound to the
+ * given Vfd and refreshes the display once per second.
+ *
+ * Returns when the user presses Esc or Ctrl+C, so main.cpp can return to
+ * its menu.
+ *
+ * @param vfd - reference to an already-initialized Vfd instance.
+ */
+void run_clock_app(Vfd& vfd);
+
 #endif

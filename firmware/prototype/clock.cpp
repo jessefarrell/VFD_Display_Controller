@@ -1,4 +1,5 @@
 #include "clock.h"
+#include "app_common.h"
 #include <cstdio>
 #include <cstring>
 
@@ -154,7 +155,7 @@ void Clock::update_display(void) {
     if (display_hour == 0) display_hour = 12;
     const char* am_pm = (dt.hour < 12) ? "AM" : "PM";
 
-    char buf[MAX_DIGITS + 1];
+    char buf[Vfd::MAX_DIGITS + 1];
 
     switch (mode) {
         case Display_Mode::MODE1:
@@ -175,4 +176,32 @@ void Clock::update_display(void) {
 
     vfd.clear_screen();
     vfd.write_string(buf);
+}
+
+void run_clock_app(Vfd& vfd) {
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+
+    Clock clock(vfd);
+    clock.init();
+
+    while (true) {
+        // Heartbeat LED so you can confirm the board is alive.
+        gpio_put(PICO_DEFAULT_LED_PIN, 1);
+        sleep_ms(1);
+        gpio_put(PICO_DEFAULT_LED_PIN, 0);
+        sleep_ms(1);
+
+        if (exit_requested()) {
+            printf("-> Exiting Clock, returning to menu\n");
+            return;
+        }
+
+        clock.update_display();
+
+        if (sleep_or_exit(1000)) {
+            printf("-> Exiting Clock, returning to menu\n");
+            return;
+        }
+    }
 }

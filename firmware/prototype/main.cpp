@@ -8,11 +8,12 @@
 #include "pico/stdio.h"
 #include "config.h"
 #include "vfd.h"
+#include "clock.h"
+#include "test_display.h"
+#include "animation.h"
 #include <stdio.h>
 
-#define SETUP_HOLD_TIME_US 50
-
-// Single global instance for this interactive test harness.
+// Single global instance, shared by whichever app the user selects below.
 Vfd vfd(SETUP_HOLD_TIME_US);
 
 /**
@@ -29,22 +30,12 @@ static char read_char(void) {
     return (char)c;
 }
 
-static void print_menu(void) {
-    printf("\n--- VFD Class Test Harness ---\n");
-    printf("Type printable characters to write them to the display.\n");
-    printf("Control keys:\n");
-    printf("  [Backspace]   cursor_shift(LEFT, 1)\n");
-    printf("  [Tab]         cursor_shift(RIGHT, 1)\n");
-    printf("  [Enter]       cursor_move(0)          (home)\n");
-    printf("  [Delete/0x7F] delete_character(1)\n");
-    printf("  Ctrl+B (0x02) toggle cursor_blink()\n");
-    printf("  Ctrl+L (0x0C) clear_screen()\n");
-    printf("  Ctrl+R (0x12) reset()\n");
-    printf("  Ctrl+[ (0x1B) display_scroll(LEFT, wrap=true)\n");
-    printf("  Ctrl+] (0x1D) display_scroll(RIGHT, wrap=true)\n");
-    printf("  Ctrl+H (0x08) same as Backspace (cursor left)\n");
-    printf("  Ctrl+A (0x01) print this menu again\n");
-    printf("-------------------------------\n\n");
+static void print_app_menu(void) {
+    printf("\n--- VFD Launcher ---\n");
+    printf("  [1] Clock\n");
+    printf("  [2] Display Test Harness\n");
+    printf("  [3] Animation\n");
+    printf("Select an application: ");
 }
 
 int main() {
@@ -53,88 +44,36 @@ int main() {
 
     vfd.init();
 
-    gpio_init(PICO_DEFAULT_LED_PIN);
-    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
-
-    print_menu();
-
-    static bool blink_state = false;
-
+    // Redisplay the menu every time an app exits (Esc/Ctrl+C) or an
+    // invalid key was pressed.
     while (true) {
-        // Heartbeat LED so you can confirm the board is alive and not stuck
-        // waiting on something unexpected.
-        gpio_put(PICO_DEFAULT_LED_PIN, 1);
-        sleep_ms(1);
-        gpio_put(PICO_DEFAULT_LED_PIN, 0);
-        sleep_ms(1);
-
-        printf("Enter input: ");
-        char c = read_char();
+        print_app_menu();
+        char choice = read_char();
         printf("\n");
 
-        switch (c) {
-            case 0x7F:  // Delete
-                printf("-> delete_character(1)\n");
-                vfd.delete_character(1);
+        switch (choice) {
+            case '1':
+                printf("-> Starting Clock\n");
+                run_clock_app(vfd);
                 break;
 
-            case '\t':  // Tab
-                printf("-> cursor_shift(RIGHT, 1)\n");
-                vfd.cursor_shift(Direction::RIGHT, 1);
+            case '2':
+                printf("-> Starting Display Test Harness\n");
+                run_display_test_app(vfd);
                 break;
 
-            case 0x08:  // Backspace / Ctrl+H
-                printf("-> cursor_shift(LEFT, 1)\n");
-                vfd.cursor_shift(Direction::LEFT, 1);
-                break;
-
-            case '\r':  // Enter
-            case '\n':
-                printf("-> cursor_move(0)\n");
-                vfd.cursor_move(0);
-                break;
-
-            case 0x02:  // Ctrl+B
-                blink_state = !blink_state;
-                printf("-> cursor_blink(%s)\n", blink_state ? "true" : "false");
-                vfd.cursor_blink(blink_state);
-                break;
-
-            case 0x0C:  // Ctrl+L
-                printf("-> clear_screen()\n");
-                vfd.clear_screen();
-                break;
-
-            case 0x12:  // Ctrl+R
-                printf("-> reset()\n");
-                vfd.reset();
-                break;
-
-            case 0x1B:  // Ctrl+[
-                printf("-> display_scroll(LEFT, wrap=true)\n");
-                vfd.display_scroll(Direction::LEFT, true);
-                break;
-
-            case 0x1D:  // Ctrl+]
-                printf("-> display_scroll(RIGHT, wrap=true)\n");
-                vfd.display_scroll(Direction::RIGHT, true);
-                break;
-
-            case 0x01:  // Ctrl+A
-                print_menu();
+            case '3':
+                printf("-> Starting Animation\n");
+                run_animation_app(vfd);
                 break;
 
             default:
-                if (c >= 0x20 && c < 0x7F) {  // printable ASCII
-                    printf("-> write_char('%c')\n", c);
-                    bool ok = vfd.write_char(c);
-                    if (!ok) {
-                        printf("   write_char returned false (cursor at end?)\n");
-                    }
-                } else {
-                    printf("-> unrecognized input: 0x%02x (ignored)\n", (uint8_t)c);
-                }
+                printf("Unrecognized selection: '%c'. Please choose 1, 2, or 3.\n", choice);
                 break;
         }
+
+        // Start the next menu prompt from a clean display, whether an app
+        // just exited or the selection was invalid.
+        vfd.clear_screen();
     }
 }
