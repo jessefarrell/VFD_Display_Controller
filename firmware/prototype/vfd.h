@@ -29,7 +29,7 @@ class Vfd{
 private:
     static constexpr uint8_t MAX_DIGITS = 20;
     uint8_t setup_hold_time_us;
-    uint8_t cursor_position;                // 0 = Furthest left (home), MAX_DIGITS -1 = furthest right
+    uint8_t cursor_position;                // 0 = Furthest left (home), MAX_DIGITS = furthest right
     char displayed_string[MAX_DIGITS];
 
     /**

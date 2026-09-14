@@ -35,9 +35,9 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(test test.cpp vfd.cpp clock.cpp)
+add_executable(test test_display.cpp vfd.cpp)
 
-pico_set_program_name(test "test")
+pico_set_program_name(test "test_display")
 pico_set_program_version(test "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
@@ -45,8 +45,7 @@ pico_enable_stdio_uart(test 0)
 pico_enable_stdio_usb(test 1)
 
 # Add the standard library to the build
-target_link_libraries(test
-        pico_stdlib)
+target_link_libraries(test pico_stdlib)
 
 # Add the standard include files to the build
 target_include_directories(test PRIVATE

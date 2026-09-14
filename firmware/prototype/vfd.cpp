@@ -83,7 +83,7 @@ void Vfd::clear_screen(void) {
 void Vfd::_vfd_gpio_put(uint pin, bool value) {
     // GPIO drives an NPN BJT base which pulls down the corresponding VFD
     // input pin... `value` is the LOGICAL state you want the VFD to see.
-    gpio_put(pin, !value);
+    gpio_put(pin, value);
 }
 
 void Vfd::_write_code(uint8_t data) {
@@ -201,9 +201,12 @@ void Vfd::cursor_shift(Direction direction, uint8_t num) {
 
 void Vfd::delete_character(uint8_t num) {
     for (uint8_t i = 0; i < num && cursor_position < MAX_DIGITS; i++) {
-        _write_code(static_cast<uint8_t>(VfdCode::DELETE_ELEMENT));
-        displayed_string[cursor_position] = ' ';    //Empty character is represented as a space ' '
-        cursor_position++;
+        
+        write_char(' ');
+
+        // _write_code(static_cast<uint8_t>(VfdCode::DELETE_ELEMENT));
+        // displayed_string[cursor_position] = ' ';    //Empty character is represented as a space ' '
+        // cursor_position++;
     }
 }
 
