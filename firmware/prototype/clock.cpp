@@ -1,6 +1,7 @@
 #include "clock.h"
 #include "app_common.h"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 // ---------------------------------------------------------------------------
@@ -24,6 +25,137 @@ namespace {
             days = 29;
         }
         return days;
+    }
+
+    /**
+     * @brief Blocking read of one character from stdin, echoed back to
+     * console.
+     *
+     * Mirrors the read_char() helper in main.cpp / animation.cpp /
+     * test_display.cpp -- kept local here rather than shared so this
+     * file stays self-contained.
+     */
+    char read_char(void) {
+        int c = getchar_timeout_us(UINT32_MAX);  // block indefinitely
+        if (c == PICO_ERROR_TIMEOUT) {
+            return '\0';  // shouldn't happen with UINT32_MAX, but just in case
+        }
+        putchar((char)c);
+        return (char)c;
+    }
+
+    // Distinguishes "user typed a value" from "user pressed Enter to keep
+    // the default" from "user hit Esc/Ctrl+C" -- the set-datetime wizard
+    // needs all three, since only the last one should cancel the rest of
+    // the wizard rather than just moving on with the current value.
+    enum class FieldInput { ENTERED, KEPT_DEFAULT, ABORTED };
+
+    /**
+     * @brief Blocking read of a short digits-only line from stdin,
+     * terminated by Enter. Backspace/Delete removes the last digit.
+     *
+     * @param out_value - set to the parsed value if the result is ENTERED;
+     * untouched otherwise.
+     */
+    FieldInput _read_uint_line(uint32_t* out_value) {
+        char buf[8] = {0};
+        size_t len = 0;
+
+        while (true) {
+            char c = read_char();
+
+            if (is_exit_key(c)) {
+                printf("\n");
+                return FieldInput::ABORTED;
+            }
+            if (c == '\r' || c == '\n') {
+                printf("\n");
+                break;
+            }
+            if ((c == 0x7F || c == 0x08) && len > 0) {  // Delete / Backspace
+                len--;
+                buf[len] = '\0';
+                printf(" \b");  // erase the character just echoed by read_char
+                continue;
+            }
+            if (c >= '0' && c <= '9' && len < sizeof(buf) - 1) {
+                buf[len++] = c;
+                buf[len] = '\0';
+            }
+            // Any other key is silently ignored -- this field is digits only.
+        }
+
+        if (len == 0) {
+            return FieldInput::KEPT_DEFAULT;
+        }
+        *out_value = (uint32_t)atoi(buf);
+        return FieldInput::ENTERED;
+    }
+
+    /**
+     * @brief Prompts for one numeric field, showing current_value as the
+     * default. On KEPT_DEFAULT or ABORTED, *out_value is set to
+     * current_value; on ENTERED, to whatever was typed.
+     *
+     * @return the same FieldInput result from _read_uint_line(), so the
+     * caller can tell an abort apart from an accepted default.
+     */
+    FieldInput _prompt_field(const char* label, int current_value, int* out_value) {
+        printf("%s (Enter to keep %d): ", label, current_value);
+
+        uint32_t value;
+        FieldInput result = _read_uint_line(&value);
+        *out_value = (result == FieldInput::ENTERED) ? (int)value : current_value;
+        return result;
+    }
+
+    /**
+     * @brief Interactive wizard to set the clock's date/time, one field
+     * at a time (year, then month, then day, then hour, then minute --
+     * in that order so each field's clamping sees the already-updated
+     * year/month, e.g. a day of 29 lands correctly whether or not the
+     * new year makes February a leap month). Esc/Ctrl+C at any prompt
+     * cancels the rest of the wizard; fields already confirmed stay
+     * applied, since each is written to the RTC immediately.
+     */
+    void _run_set_datetime_wizard(Clock& clock) {
+        datetime_t dt = clock.get_datetime();
+
+        printf("\n--- Set Date/Time --- (Esc/Ctrl+C cancels the rest)\n");
+
+        int year, month, day, hour, minute;
+
+        if (_prompt_field("Year", dt.year, &year) == FieldInput::ABORTED) {
+            printf("-> Cancelled, no changes made\n");
+            return;
+        }
+        clock.set_year(year);
+
+        if (_prompt_field("Month (1-12)", dt.month, &month) == FieldInput::ABORTED) {
+            printf("-> Cancelled -- Year updated, rest unchanged\n");
+            return;
+        }
+        clock.set_month(month);
+
+        if (_prompt_field("Day (1-31)", dt.day, &day) == FieldInput::ABORTED) {
+            printf("-> Cancelled -- Year/Month updated, rest unchanged\n");
+            return;
+        }
+        clock.set_day(day);
+
+        if (_prompt_field("Hour, 24hr (0-23)", dt.hour, &hour) == FieldInput::ABORTED) {
+            printf("-> Cancelled -- Year/Month/Day updated, rest unchanged\n");
+            return;
+        }
+        clock.set_hour(hour);
+
+        if (_prompt_field("Minute (0-59)", dt.min, &minute) == FieldInput::ABORTED) {
+            printf("-> Cancelled -- everything but Minute updated\n");
+            return;
+        }
+        clock.set_minute(minute);
+
+        printf("-> Date/time updated\n");
     }
 }
 
@@ -83,6 +215,10 @@ void Clock::reset(void) {
 
     _set_datetime(dt);
     update_display();
+}
+
+datetime_t Clock::get_datetime(void) {
+    return _get_datetime();
 }
 
 void Clock::set_minute(int minute) {
@@ -155,7 +291,7 @@ void Clock::update_display(void) {
     if (display_hour == 0) display_hour = 12;
     const char* am_pm = (dt.hour < 12) ? "AM" : "PM";
 
-    char buf[Vfd::MAX_DIGITS + 1];
+    char buf[Vfd::MAX_DIGITS+1];
 
     switch (mode) {
         case Display_Mode::MODE1:
@@ -174,7 +310,14 @@ void Clock::update_display(void) {
             break;
     }
 
+    // clear_screen() intentionally does not move the cursor (see its doc
+    // comment in vfd.h) -- if a previous app left it partway across the
+    // display, write_string() below would start mid-line and wrap the
+    // tail end around onto the front, scrambling the output. Explicitly
+    // home it first, same as every other app's full-line writes do.
     vfd.clear_screen();
+    sleep_ms(1);
+    vfd.cursor_move(0);
     vfd.write_string(buf);
 }
 
@@ -185,6 +328,9 @@ void run_clock_app(Vfd& vfd) {
     Clock clock(vfd);
     clock.init();
 
+    printf("\n--- Clock ---\n");
+    printf("Press 's' to set the date/time. Esc / Ctrl+C exits to the main menu.\n");
+
     while (true) {
         // Heartbeat LED so you can confirm the board is alive.
         gpio_put(PICO_DEFAULT_LED_PIN, 1);
@@ -192,9 +338,16 @@ void run_clock_app(Vfd& vfd) {
         gpio_put(PICO_DEFAULT_LED_PIN, 0);
         sleep_ms(1);
 
-        if (exit_requested()) {
-            printf("-> Exiting Clock, returning to menu\n");
-            return;
+        int key = poll_char();
+        if (key != -1) {
+            char c = (char)key;
+            if (is_exit_key(c)) {
+                printf("-> Exiting Clock, returning to menu\n");
+                return;
+            } else if (c == 's' || c == 'S') {
+                _run_set_datetime_wizard(clock);
+            }
+            // Any other key is ignored.
         }
 
         clock.update_display();

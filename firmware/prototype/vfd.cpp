@@ -73,6 +73,7 @@ void Vfd::reset(void) {
 
     cursor_position = 0;
     _blank_displayed_string();
+    sleep_us(setup_hold_time_us); // allow some extra time for reset to do its thing!
 }
 
 void Vfd::clear_screen(void) {
@@ -91,7 +92,7 @@ void Vfd::_write_code(uint8_t data) {
     // send "5" (0x35) instead.
 
     // Debug code print
-    printf("_write_code: 0x%02x\r\n", data);
+    // printf("_write_code: 0x%02x\r\n", data);
 
     if (data == 0x53 || data == 0x73) {
             data = 0x35;
@@ -132,17 +133,17 @@ void Vfd::_clear_and_update_display(void) {
     char snapshot[MAX_DIGITS + 1];
     memcpy(snapshot, displayed_string, sizeof(snapshot));
 
-    printf("_clear_and_update_display: snapshot = \"%s\"\r\n", snapshot);
+    // printf("_clear_and_update_display: snapshot = \"%s\"\r\n", snapshot);
 
     clear_screen();
     _cursor_send_home();
     write_string(snapshot);
 
-    printf("_clear_and_update_display: displayed_string after write_string = \"%s\"\r\n", displayed_string);
+    // printf("_clear_and_update_display: displayed_string after write_string = \"%s\"\r\n", displayed_string);
 }
 
 bool Vfd::write_char(char c) {
-    printf("\r\nCursor Position: %i", cursor_position);
+    // printf("\r\nCursor Position: %i", cursor_position);
     if (c < 0x20 || c > 0x7E) {
         return false;
     }
@@ -232,7 +233,7 @@ void Vfd::display_scroll(Direction direction, bool wrap) {
     memset(shifted, ' ', MAX_DIGITS);
     shifted[MAX_DIGITS] = '\0';
 
-    printf("display_scroll: before = \"%s\"\r\n", displayed_string);
+    // printf("display_scroll: before = \"%s\"\r\n", displayed_string);
 
     if (direction == Direction::RIGHT) {
         // Grab carried characteR
@@ -251,7 +252,7 @@ void Vfd::display_scroll(Direction direction, bool wrap) {
         shifted[MAX_DIGITS - 1] = carry;
     }
 
-    printf("display_scroll: shifted = \"%s\"\r\n", shifted);
+    // printf("display_scroll: shifted = \"%s\"\r\n", shifted);
 
     memcpy(displayed_string, shifted, sizeof(displayed_string));
     _clear_and_update_display();

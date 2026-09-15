@@ -14,11 +14,24 @@ inline bool is_exit_key(char c) {
 }
 
 /**
+ * @brief Non-blocking check for a single byte on stdin.
+ *
+ * Intended for apps that mostly run "hands off" but still want to react
+ * to an occasional keypress without blocking their main loop (e.g. the
+ * animation app switching effects mid-run).
+ *
+ * @return the character read, or -1 if nothing was waiting.
+ */
+int poll_char(void);
+
+/**
  * @brief Non-blocking check for an exit request (ESC or Ctrl+C) on stdin.
  *
- * Intended for apps that don't otherwise read input (clock, animation):
- * call once per loop iteration. Any other incoming byte is silently
- * discarded, since those apps have no other use for keyboard input.
+ * Intended for apps that don't otherwise read input (clock): call once
+ * per loop iteration. Any other incoming byte is silently discarded,
+ * since those apps have no other use for keyboard input. Built on
+ * poll_char(); apps that need to react to other keys too (e.g.
+ * animation) should call poll_char() directly instead.
  *
  * @return true if the user just requested to return to the menu.
  */

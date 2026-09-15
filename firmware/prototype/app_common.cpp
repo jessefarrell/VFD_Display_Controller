@@ -1,8 +1,16 @@
 #include "app_common.h"
 
-bool exit_requested(void) {
+int poll_char(void) {
     int c = getchar_timeout_us(0);  // poll only, never block
     if (c == PICO_ERROR_TIMEOUT) {
+        return -1;
+    }
+    return c;
+}
+
+bool exit_requested(void) {
+    int c = poll_char();
+    if (c == -1) {
         return false;
     }
     return is_exit_key((char)c);

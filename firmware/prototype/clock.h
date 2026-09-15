@@ -78,6 +78,14 @@ class Clock {
     void reset(void);
 
     /**
+     * @brief Returns the currently set date/time -- e.g. to show as the
+     * default when prompting the user to change it.
+     *
+     * @return datetime_t - current date/time as tracked by the RTC.
+     */
+    datetime_t get_datetime(void);
+
+    /**
      * @brief Sets the minute field, leaving the rest of the date/time untouched.
      *
      * @param minute - desired minute (0-59)
@@ -125,8 +133,14 @@ class Clock {
  * @brief Runs the clock application: initializes a Clock bound to the
  * given Vfd and refreshes the display once per second.
  *
- * Returns when the user presses Esc or Ctrl+C, so main.cpp can return to
- * its menu.
+ * Press 's' at any point to open a wizard that sets the year, month,
+ * day, hour, and minute one field at a time, showing the current value
+ * of each as the default (Enter keeps it). Esc/Ctrl+C at any of those
+ * prompts cancels the rest of the wizard, leaving fields not yet
+ * confirmed unchanged.
+ *
+ * Returns when the user presses Esc or Ctrl+C outside the wizard, so
+ * main.cpp can return to its menu.
  *
  * @param vfd - reference to an already-initialized Vfd instance.
  */
