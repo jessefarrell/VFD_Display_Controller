@@ -41,7 +41,7 @@
  * =====================================================================
  */
 
- #define SETUP_HOLD_TIME_US 50
+ #define SETUP_HOLD_TIME_US 150
  
 
 /* ---- Control / Status Pins ---- */
