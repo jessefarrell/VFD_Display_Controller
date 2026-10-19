@@ -165,7 +165,7 @@ bool Vfd::write_char(char c) {
 bool Vfd::write_string(const char* text) {
     bool all_ok = true;
 
-    for (size_t i = 0; text[i] != '\0' && cursor_position < MAX_DIGITS; i++) {
+    for (size_t i = 0; i < MAX_DIGITS && text[i] != '\0'; i++) {
         if (!write_char(text[i])) {
             all_ok = false;
         }
@@ -186,7 +186,7 @@ void Vfd::cursor_shift(Direction direction, uint8_t num) {
     for (uint8_t i = 0; i < num; i++) {
         // Clamp so cursor_position can't run off either end of the buffer.
         if (direction == Direction::RIGHT) {
-            if (cursor_position >= MAX_DIGITS) {
+            if (cursor_position >= MAX_DIGITS - 1) {
                 break;
             }
             cursor_position++;

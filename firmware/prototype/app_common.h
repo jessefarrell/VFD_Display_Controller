@@ -2,6 +2,7 @@
 #define APP_COMMON_H
 
 #include "pico/stdlib.h"
+#include <cstddef>
 #include <cstdint>
 
 // ESC and Ctrl+C are the bytes a terminal sends for the Escape key and
@@ -13,39 +14,28 @@ inline bool is_exit_key(char c) {
     return c == KEY_ESC || c == KEY_CTRL_C;
 }
 
-/**
- * @brief Non-blocking check for a single byte on stdin.
- *
- * Intended for apps that mostly run "hands off" but still want to react
- * to an occasional keypress without blocking their main loop (e.g. the
- * animation app switching effects mid-run).
- *
- * @return the character read, or -1 if nothing was waiting.
- */
+// All console reads share CR/LF normalization, including across app changes.
+// CR and LF each produce '\n'; a CRLF pair produces just one '\n', even
+// when its bytes arrive in separate USB packets.
+
+// Consumes one character without blocking, or returns -1 if none is available.
 int poll_char(void);
 
-/**
- * @brief Non-blocking check for an exit request (ESC or Ctrl+C) on stdin.
- *
- * Intended for apps that don't otherwise read input (clock): call once
- * per loop iteration. Any other incoming byte is silently discarded,
- * since those apps have no other use for keyboard input. Built on
- * poll_char(); apps that need to react to other keys too (e.g.
- * animation) should call poll_char() directly instead.
- *
- * @return true if the user just requested to return to the menu.
- */
-bool exit_requested(void);
+// Returns the next character without consuming it, or -1 if none is available.
+int peek_char(void);
 
-/**
- * @brief Sleeps for the given duration, polling for an exit request every
- * ~50ms so a long wait (e.g. the clock's 1-second refresh) doesn't leave
- * ESC/Ctrl+C feeling unresponsive.
- *
- * @param duration_ms - total time to sleep, in milliseconds.
- * @return true if an exit was requested during the sleep (the sleep is
- * cut short in that case, so callers should stop and return immediately).
- */
-bool sleep_or_exit(uint32_t duration_ms);
+// Blocks until a character is available, then consumes and echoes it.
+char read_char(void);
+
+// Sleeps for up to duration_ms, checking for input at most every 50 ms.
+// Returns true if input is waiting; leaves it queued for the app to handle.
+// Callers must return to their input loop, rather than treating this as an exit.
+bool wait_for_input(uint32_t duration_ms);
+
+// Reads printable text into a work buffer. After the first newline, collects
+// until input is idle for 250 ms and joins pasted lines/tabs with spaces.
+// False on Esc/Ctrl+C or oversized input; oversized pastes are fully consumed.
+// The caller must keep its saved text separate until this returns true.
+bool read_text_line(char* buf, size_t buf_size);
 
 #endif /* APP_COMMON_H */

@@ -1,5 +1,7 @@
 #include "clock.h"
 #include "app_common.h"
+#include "settings.h"
+#include "pico/time.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -11,6 +13,18 @@
 // ---------------------------------------------------------------------------
 
 namespace {
+    constexpr uint64_t CHECKPOINT_INTERVAL_US = 60ull * 1000000;
+
+    void remember_datetime(const datetime_t& dt) {
+        auto& s = settings();
+        s.year = dt.year;
+        s.month = dt.month;
+        s.day = dt.day;
+        s.hour = dt.hour;
+        s.minute = dt.min;
+        s.second = dt.sec;
+    }
+
     bool _is_leap_year(int year) {
         return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
     }
@@ -25,23 +39,6 @@ namespace {
             days = 29;
         }
         return days;
-    }
-
-    /**
-     * @brief Blocking read of one character from stdin, echoed back to
-     * console.
-     *
-     * Mirrors the read_char() helper in main.cpp / animation.cpp /
-     * test_display.cpp -- kept local here rather than shared so this
-     * file stays self-contained.
-     */
-    char read_char(void) {
-        int c = getchar_timeout_us(UINT32_MAX);  // block indefinitely
-        if (c == PICO_ERROR_TIMEOUT) {
-            return '\0';  // shouldn't happen with UINT32_MAX, but just in case
-        }
-        putchar((char)c);
-        return (char)c;
     }
 
     // Distinguishes "user typed a value" from "user pressed Enter to keep
@@ -118,7 +115,7 @@ namespace {
      * cancels the rest of the wizard; fields already confirmed stay
      * applied, since each is written to the RTC immediately.
      */
-    void _run_set_datetime_wizard(Clock& clock) {
+    bool _run_set_datetime_wizard(Clock& clock) {
         datetime_t dt = clock.get_datetime();
 
         printf("\n--- Set Date/Time --- (Esc/Ctrl+C cancels the rest)\n");
@@ -127,35 +124,36 @@ namespace {
 
         if (_prompt_field("Year", dt.year, &year) == FieldInput::ABORTED) {
             printf("-> Cancelled, no changes made\n");
-            return;
+            return false;
         }
         clock.set_year(year);
 
         if (_prompt_field("Month (1-12)", dt.month, &month) == FieldInput::ABORTED) {
             printf("-> Cancelled -- Year updated, rest unchanged\n");
-            return;
+            return true;
         }
         clock.set_month(month);
 
         if (_prompt_field("Day (1-31)", dt.day, &day) == FieldInput::ABORTED) {
             printf("-> Cancelled -- Year/Month updated, rest unchanged\n");
-            return;
+            return true;
         }
         clock.set_day(day);
 
         if (_prompt_field("Hour, 24hr (0-23)", dt.hour, &hour) == FieldInput::ABORTED) {
             printf("-> Cancelled -- Year/Month/Day updated, rest unchanged\n");
-            return;
+            return true;
         }
         clock.set_hour(hour);
 
         if (_prompt_field("Minute (0-59)", dt.min, &minute) == FieldInput::ABORTED) {
             printf("-> Cancelled -- everything but Minute updated\n");
-            return;
+            return true;
         }
         clock.set_minute(minute);
 
         printf("-> Date/time updated\n");
+        return true;
     }
 }
 
@@ -169,11 +167,13 @@ datetime_t Clock::_get_datetime(void) {
 
 void Clock::_set_datetime(const datetime_t& dt) {
     datetime_t tmp = dt;
-    // NOTE: rtc_set_datetime() returns bool (success/failure) per the Pico
-    // SDK -- currently ignored here. If hardware-level range rejection
-    // matters to you (vs. the clamping done in the setters below), this
-    // return value should be propagated up.
-    rtc_set_datetime(&tmp);
+    if (rtc_set_datetime(&tmp)) {
+        // The SDK requires up to three RTC clock cycles before reads see
+        // the new value (64 us at the default Pico RTC clock frequency).
+        sleep_us(64);
+    } else {
+        printf("-> RTC rejected date/time\n");
+    }
 }
 
 int8_t Clock::_compute_dotw(const datetime_t& dt) {
@@ -198,12 +198,28 @@ int8_t Clock::_compute_dotw(const datetime_t& dt) {
 }
 
 void Clock::init(void) {
-    rtc_init();
     mode = Display_Mode::DEFAULT;
-    reset();
+    if (!rtc_running()) {
+        rtc_init();
+        const auto& s = settings();
+        datetime_t dt = {};
+        dt.year = s.year;
+        dt.month = s.month;
+        dt.day = s.day;
+        dt.hour = s.hour;
+        dt.min = s.minute;
+        dt.sec = s.second;
+        dt.dotw = _compute_dotw(dt);
+        _set_datetime(dt);
+        if (s.clock_time_set)
+            printf("-> Restored saved date/time; elapsed power-off time is unknown\n");
+    }
+    last_checkpoint_us = time_us_64();
+    update_display();
 }
 
 void Clock::reset(void) {
+    if (!rtc_running()) rtc_init();
     datetime_t dt = {};
     dt.year  = 2026;
     dt.month = 1;
@@ -214,11 +230,32 @@ void Clock::reset(void) {
     dt.dotw  = _compute_dotw(dt);
 
     _set_datetime(dt);
+    last_checkpoint_us = time_us_64();
     update_display();
 }
 
 datetime_t Clock::get_datetime(void) {
     return _get_datetime();
+}
+
+bool Clock::save_datetime(void) {
+    datetime_t dt = _get_datetime();
+    settings().clock_time_set = true;
+    remember_datetime(dt);
+    last_checkpoint_us = time_us_64();
+    return settings_save(true);
+}
+
+void Clock::checkpoint_if_due(void) {
+    uint64_t now = time_us_64();
+    if (now - last_checkpoint_us < CHECKPOINT_INTERVAL_US) return;
+    // Rate-limit failures too; retrying every display refresh would waste flash.
+    last_checkpoint_us = now;
+    if (!settings().clock_time_set) return;
+    datetime_t dt{};
+    if (!rtc_get_datetime(&dt)) return;
+    remember_datetime(dt);
+    settings_checkpoint_clock();
 }
 
 void Clock::set_minute(int minute) {
@@ -273,6 +310,8 @@ void Clock::set_month(int month) {
 
 void Clock::set_year(int year) {
     datetime_t dt = _get_datetime();
+    if (year < 1) year = 1;
+    if (year > 4095) year = 4095;
     dt.year = year;
 
     // Re-clamp day in case a leap-day (Feb 29) no longer exists in the new year
@@ -319,6 +358,7 @@ void Clock::update_display(void) {
     sleep_ms(1);
     vfd.cursor_move(0);
     vfd.write_string(buf);
+    checkpoint_if_due();
 }
 
 void run_clock_app(Vfd& vfd) {
@@ -330,6 +370,7 @@ void run_clock_app(Vfd& vfd) {
 
     printf("\n--- Clock ---\n");
     printf("Press 's' to set the date/time. Esc / Ctrl+C exits to the main menu.\n");
+    printf("Once set, date/time is checkpointed about once a minute while Clock is running.\n");
 
     while (true) {
         // Heartbeat LED so you can confirm the board is alive.
@@ -345,16 +386,15 @@ void run_clock_app(Vfd& vfd) {
                 printf("-> Exiting Clock, returning to menu\n");
                 return;
             } else if (c == 's' || c == 'S') {
-                _run_set_datetime_wizard(clock);
+                if (_run_set_datetime_wizard(clock)) clock.save_datetime();
             }
             // Any other key is ignored.
         }
 
         clock.update_display();
 
-        if (sleep_or_exit(1000)) {
-            printf("-> Exiting Clock, returning to menu\n");
-            return;
-        }
+        // Wake for any key and let the input loop handle it, including
+        // 's' typed during this wait. The wait does not consume the key.
+        wait_for_input(1000);
     }
 }

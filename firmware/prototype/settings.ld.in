@@ -1,0 +1,8 @@
+INCLUDE "@PICO_LINKER_SCRIPT_PATH@/memmap_default.ld"
+
+/* Keep configuration at its existing addresses for firmware upgrades. */
+__settings_start = ORIGIN(FLASH) + LENGTH(FLASH) - 8192;
+/* Eight additional 4 KiB sectors for page-sized minute clock checkpoints. */
+__clock_checkpoint_start = __settings_start - 32768;
+ASSERT(__flash_binary_end <= __clock_checkpoint_start,
+       "Firmware overlaps reserved clock/settings flash sectors")

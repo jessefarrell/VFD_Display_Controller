@@ -35,7 +35,18 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(test main.cpp test_display.cpp clock.cpp animation.cpp app_common.cpp vfd.cpp)
+add_executable(test main.cpp test_display.cpp clock.cpp animation.cpp app_common.cpp vfd.cpp
+        settings.cpp settings_flash.cpp static_text.cpp)
+
+# Record frame sizes and flag large buffers in the input/storage paths.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set_source_files_properties(animation.cpp settings.cpp PROPERTIES
+            COMPILE_OPTIONS "-fstack-usage;-Wframe-larger-than=512")
+endif()
+
+# Keep the SDK memory map and reject firmware that reaches the settings sectors.
+configure_file(settings.ld.in ${CMAKE_CURRENT_BINARY_DIR}/settings.ld @ONLY)
+pico_set_linker_script(test ${CMAKE_CURRENT_BINARY_DIR}/settings.ld)
 
 pico_set_program_name(test "vfd_launcher")
 pico_set_program_version(test "0.1")
@@ -45,7 +56,7 @@ pico_enable_stdio_uart(test 0)
 pico_enable_stdio_usb(test 1)
 
 # Add the standard library to the build
-target_link_libraries(test pico_stdlib hardware_rtc)
+target_link_libraries(test pico_stdlib hardware_rtc hardware_flash pico_flash)
 
 # Add the standard include files to the build
 target_include_directories(test PRIVATE

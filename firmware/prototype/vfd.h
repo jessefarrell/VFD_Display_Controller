@@ -33,7 +33,7 @@ public:
 
 private:
     uint8_t setup_hold_time_us;
-    uint8_t cursor_position;                // 0 = Furthest left (home), MAX_DIGITS = furthest right
+    uint8_t cursor_position;                // 0 = home, MAX_DIGITS - 1 = furthest right
     // +1 for a null terminator -- displayed_string is treated as a C-string
     // throughout this class (write_string's loop, every %s printf).
     char displayed_string[MAX_DIGITS + 1];

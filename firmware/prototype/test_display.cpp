@@ -6,25 +6,12 @@
 
 #include "test_display.h"
 #include "app_common.h"
+#include "settings.h"
 #include "pico/stdlib.h"
 #include "pico/stdio.h"
 #include "config.h"
 #include "vfd.h"
 #include <stdio.h>
-
-/**
- * @brief Blocking read of one character from stdin, echoed back to console.
- */
-static char read_char(void) {
-    int c = getchar_timeout_us(UINT32_MAX);  // block indefinitely
-
-    if (c == PICO_ERROR_TIMEOUT) {
-        return '\0';  // shouldn't happen with UINT32_MAX, but just in case
-    }
-
-    putchar((char)c);
-    return (char)c;
-}
 
 static void print_menu(void) {
     printf("\n--- VFD Class Test Harness ---\n");
@@ -51,7 +38,8 @@ void run_display_test_app(Vfd& vfd) {
 
     print_menu();
 
-    static bool blink_state = false;
+    bool blink_state = settings().cursor_blink;
+    vfd.cursor_blink(blink_state);
 
     while (true) {
         // Heartbeat LED so you can confirm the board is alive and not stuck
@@ -96,6 +84,8 @@ void run_display_test_app(Vfd& vfd) {
                 blink_state = !blink_state;
                 printf("-> cursor_blink(%s)\n", blink_state ? "true" : "false");
                 vfd.cursor_blink(blink_state);
+                settings().cursor_blink = blink_state;
+                settings_save();
                 break;
 
             case 0x0C:  // Ctrl+L
@@ -106,6 +96,9 @@ void run_display_test_app(Vfd& vfd) {
             case 0x12:  // Ctrl+R
                 printf("-> reset()\n");
                 vfd.reset();
+                blink_state = false;
+                settings().cursor_blink = false;
+                settings_save();
                 break;
 
             case 0x1C:  // Ctrl+\ (moved off Ctrl+[/Esc, which now exits)

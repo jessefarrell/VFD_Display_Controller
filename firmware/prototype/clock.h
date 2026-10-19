@@ -28,6 +28,7 @@ class Clock {
     private:
     Display_Mode mode;
     Vfd& vfd;
+    uint64_t last_checkpoint_us = 0;
 
     /**
      * @brief Reads the current date/time from the RP2040 hardware RTC.
@@ -66,9 +67,9 @@ class Clock {
     /**
      * @brief Initializes the hardware RTC and starts displaying clock.
      *
-     * By default the time is set to 00:00:00, JAN 1 2026 (Thursday).
-     * Note: the RP2040 RTC is NOT battery-backed -- this default is
-     * re-applied on every power-on/reset, not just the first boot.
+     * Keeps an already-running RTC when re-entering the app. Otherwise
+     * restores the latest saved date/time/checkpoint, or JAN 1 2026.
+     * The RP2040 RTC cannot account for time spent powered off.
      */
     void init(void);
 
@@ -84,6 +85,12 @@ class Clock {
      * @return datetime_t - current date/time as tracked by the RTC.
      */
     datetime_t get_datetime(void);
+
+    // Persists an explicitly applied date/time; never called on refresh ticks.
+    bool save_datetime(void);
+
+    // Appends a checkpoint at most once per minute after the clock is set.
+    void checkpoint_if_due(void);
 
     /**
      * @brief Sets the minute field, leaving the rest of the date/time untouched.
